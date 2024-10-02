@@ -1,0 +1,338 @@
+{
+    "openapi": "3.0.2",
+    "info": {
+        "title": "Notifications Plugin REST API",
+        "version": "1.0.0",
+        "description": "This is the documentation of the Notifications plugin API based on the OpenAPI 3.0 specification."
+    },
+    "servers": [
+        {
+            "url": "http://localhost:3000/api",
+            "description": ""
+        }
+    ],
+    "paths": {
+        "/notifications/": {
+            "summary": "Get notifications",
+            "get": {
+                "tags": [
+                    "Notification Management"
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/Notifications"
+                    }
+                },
+                "summary": "Retrieve a list of notifications"
+            },
+            "post": {
+                "requestBody": {},
+                "tags": [
+                    "Notification Management"
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/Notifications"
+                    }
+                },
+                "summary": "Create a new notification"
+            },
+            "parameters": [
+                {
+                    "name": "offset",
+                    "description": "Default value is 10",
+                    "schema": {
+                        "type": "integer"
+                    },
+                    "in": "query"
+                },
+                {
+                    "name": "limit",
+                    "description": "Default value is 10",
+                    "schema": {
+                        "type": "integer"
+                    },
+                    "in": "query"
+                },
+                {
+                    "name": "orderField",
+                    "description": "",
+                    "schema": {},
+                    "in": "query"
+                },
+                {
+                    "name": "search",
+                    "description": "Search for notifications with a specific text",
+                    "schema": {
+                        "type": "string"
+                    },
+                    "in": "query"
+                },
+                {
+                    "name": "read",
+                    "description": "Return read notifications only if true, otherwise all notifications",
+                    "schema": {
+                        "type": "boolean"
+                    },
+                    "in": "query"
+                },
+                {
+                    "name": "topic",
+                    "description": "",
+                    "schema": {
+                        "type": "string"
+                    },
+                    "in": "query"
+                }
+            ]
+        },
+        "/notifications/status": {
+            "get": {
+                "tags": [
+                    "Notification Management"
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/NotificationStatus"
+                    }
+                }
+            }
+        },
+        "/notifications/notifications/:id": {
+            "get": {
+                "tags": [
+                    "Notification Management"
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/Notification"
+                    },
+                    "404": {
+                        "description": "Returns 404 when no notifications are found"
+                    }
+                },
+                "summary": "Get a notification"
+            }
+        },
+        "/notifications/update": {
+            "post": {
+                "requestBody": {
+                    "content": {
+                        "application/json": {}
+                    },
+                    "required": true
+                },
+                "tags": [
+                    "Notification Management"
+                ],
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/Notifications"
+                    }
+                },
+                "summary": "Update an existing notification"
+            }
+        },
+        "/notifications/health": {
+            "get": {
+                "tags": [
+                    "Health Management"
+                ],
+                "responses": {
+                    "200": {
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Health"
+                                }
+                            }
+                        },
+                        "description": "Return status ok"
+                    }
+                }
+            }
+        }
+    },
+    "components": {
+        "schemas": {
+            "Notification": {
+                "description": "",
+                "required": [
+                    "id",
+                    "created",
+                    "origin",
+                    "payload"
+                ],
+                "type": "object",
+                "properties": {
+                    "id": {
+                        "description": "Unique identifier for the notification",
+                        "type": "string"
+                    },
+                    "user": {
+                        "description": "The user entity reference that the notification is targeted to or null for broadcast notifications",
+                        "type": "string"
+                    },
+                    "created": {
+                        "format": "date",
+                        "description": "Notification creation date",
+                        "type": "string"
+                    },
+                    "saved": {
+                        "format": "date",
+                        "description": "If user has saved the notification, the date when it was saved",
+                        "type": "string"
+                    },
+                    "read": {
+                        "format": "date",
+                        "description": "If user has read the notification, the date when it was read",
+                        "type": "string"
+                    },
+                    "updated": {
+                        "format": "date",
+                        "description": "If the notification has been updated due to it being in the same scope and from same origin as previous notification, the date when it was updated",
+                        "type": "string"
+                    },
+                    "origin": {
+                        "description": "Origin of the notification as in the reference to sender",
+                        "type": "string"
+                    },
+                    "payload": {
+                        "$ref": "#/components/schemas/NotificationPayload",
+                        "description": "Actual notification payload"
+                    }
+                }
+            },
+            "NotificationPayload": {
+                "description": "",
+                "required": [
+                    "title"
+                ],
+                "type": "object",
+                "properties": {
+                    "title": {
+                        "description": "Notification title",
+                        "type": "string"
+                    },
+                    "description": {
+                        "description": "Optional longer description for the notification",
+                        "type": "string"
+                    },
+                    "link": {
+                        "description": "Optional link where the notification is pointing to",
+                        "type": "string"
+                    },
+                    "severity": {
+                        "$ref": "#/components/schemas/NotificationSeverity",
+                        "description": "Notification severity, defaults to 'normal'"
+                    },
+                    "topic": {
+                        "description": "Optional notification topic",
+                        "type": "string"
+                    },
+                    "scope": {
+                        "description": "Notification scope, can be used to re-send same notifications in case the scope and origin matches.",
+                        "type": "string"
+                    },
+                    "icon": {
+                        "description": "Optional notification icon",
+                        "type": "string"
+                    }
+                }
+            },
+            "NotificationStatus": {
+                "description": "",
+                "required": [
+                    "unread",
+                    "read"
+                ],
+                "type": "object",
+                "properties": {
+                    "unread": {
+                        "description": "Total number of unread notifications for the user",
+                        "type": "integer"
+                    },
+                    "read": {
+                        "description": "Total number of read notifications for the user",
+                        "type": "integer"
+                    }
+                }
+            },
+            "NotificationSeverity": {
+                "description": "",
+                "enum": [
+                    "critical",
+                    "high",
+                    "normal",
+                    "low"
+                ],
+                "type": "string"
+            },
+            "Health": {
+                "description": "",
+                "required": [
+                    "status"
+                ],
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "description": "",
+                        "type": "string",
+                        "example": ""
+                    }
+                },
+                "example": {
+                    "status": "ok"
+                }
+            }
+        },
+        "responses": {
+            "Notifications": {
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/components/schemas/Notification"
+                            }
+                        }
+                    }
+                },
+                "description": ""
+            },
+            "Health": {
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/Health"
+                        }
+                    }
+                },
+                "description": ""
+            },
+            "NotificationStatus": {
+                "description": ""
+            },
+            "Notification": {
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "$ref": "#/components/schemas/Notification"
+                        }
+                    }
+                },
+                "description": ""
+            }
+        }
+    },
+    "tags": [
+        {
+            "name": "Notification Management",
+            "description": "Notifications Management"
+        },
+        {
+            "name": "Health Management",
+            "description": "Manage the health of the Notifications Plugin"
+        }
+    ]
+}

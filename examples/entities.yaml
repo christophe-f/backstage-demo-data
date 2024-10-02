@@ -3,39 +3,372 @@
 apiVersion: backstage.io/v1alpha1
 kind: System
 metadata:
-  name: examples
+  name: rhdh
 spec:
-  owner: guests
+  owner: rhdh-team
 ---
 # https://backstage.io/docs/features/software-catalog/descriptor-format#kind-component
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
-  name: example-website
+  name: red-hat-developer-hub
+  title: Red Hat Developer Hub
+  description: |
+    This is the Red Hat Developer Hub based on Backstage.io
+  links:
+     - title: Product Webpage
+       url: https://www.redhat.com/en/technologies/cloud-computing/developer-hub
+     - title: Red Hat Developer
+       url: https://developers.redhat.com/rhdh/overview
+     - title: Product Documentation
+       url: https://access.redhat.com/documentation/en-us/red_hat_developer_hub
+     - title: Download RHDH
+       url: https://catalog.redhat.com/software/containers/rhdh/rhdh-hub-rhel9/645bd4c15c00598369c31aba
+  annotations:
+    github.com/project-slug: janus-idp/backstage-showcase
+    quay.io/repository-slug: janus-idp/backstage-showcase
+    sonarqube.org/project-key: janus-idp_backstage-showcase
 spec:
   type: website
-  lifecycle: experimental
-  owner: guests
-  system: examples
-  providesApis: [example-grpc-api]
+  lifecycle: production
+  owner: rhdh-team
+  system: rhdh
+  my-templatedBy: template:example-nodejs-template
+  dependsOn:
+    - resource:pgdb
+    - resource:obc
+---
+# https://backstage.io/docs/features/software-catalog/descriptor-format#kind-component
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: rhdh-notifications-plugin
+  title: Notifications Plugin for RHDH
+  description: |
+    Send and receive notifications from other RHDH plugins
+  annotations:
+    github.com/project-slug: janus-idp/backstage-showcase
+spec:
+  type: website
+  lifecycle: production
+  owner: group:Engineering
+  system: rhdh
+  providesApis:
+    - notifications-api
+  subcomponentOf: component:red-hat-developer-hub
+  my-templatedOf: template:example-nodejs-template
+---
+# https://backstage.io/docs/features/software-catalog/descriptor-format#kind-component
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: rhdh-rbac-plugin
+  title: RBAC Plugin for RHDH
+  description: |
+    Manage permissions with fine grained control in RHDH
+  annotations:
+    github.com/project-slug: janus-idp/backstage-showcase
+spec:
+  type: website
+  lifecycle: production
+  owner: group:Engineering
+  system: rhdh
+  consumesApis:
+    - api:notifications-api
+  subcomponentOf: component:red-hat-developer-hub
+---
+# https://backstage.io/docs/features/software-catalog/descriptor-format#kind-component
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: rhdh-marketplace-plugin
+  title: Marketplace Plugin for RHDH
+  description: |
+    Manage your plugins from the marketplace
+  annotations:
+    github.com/project-slug: janus-idp/backstage-showcase
+spec:
+  type: website
+  lifecycle: production
+  owner: group:Engineering
+  system: rhdh
+  subcomponentOf: component:red-hat-developer-hub
+---
+# https://backstage.io/docs/features/software-catalog/descriptor-format/#kind-resource
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: pgdb
+  title: PostgreSQL cluster
+  description: Crunchy PostgreSQL cluster for the Red Hat Developer Hub instance.
+  links:
+    - url: https://www.crunchydata.com/products/crunchy-high-availability-postgresql
+      title: Crunchy product pages
+      icon: web
+    - url: https://access.crunchydata.com/documentation/postgres-operator/v5/
+      title: Documentation
+      icon: docs
+spec:
+  type: database
+  lifecycle: production
+  owner: rhdh-team
+  system: rhdh
+---
+apiVersion: backstage.io/v1alpha1
+kind: Resource
+metadata:
+  name: obc
+  title: S3 Compatible Storage
+  description: Red Hat OpenShift Data Foundation - Object Bucket Claim used for storing our published Techdocs.
+  links:
+    - url: https://docs.redhat.com/en/documentation/red_hat_openshift_data_foundation/4.16/html/managing_hybrid_and_multicloud_resources/object-bucket-claim
+      title: Documentation
+      icon: docs
+spec:
+  type: storage
+  lifecycle: production
+  owner: rhdh-team
+  system: rhdh
 ---
 # https://backstage.io/docs/features/software-catalog/descriptor-format#kind-api
+# OpenAPI file created with Apicurio then convert to yaml with https://www.bairesdev.com/tools/json2yaml/
 apiVersion: backstage.io/v1alpha1
 kind: API
 metadata:
-  name: example-grpc-api
+  name: notifications-api
+  title: Notifications Plugin
+  description: This is the documentation of the Notifications plugin API based on the OpenAPI 3.0 specification.
 spec:
-  type: grpc
-  lifecycle: experimental
-  owner: guests
-  system: examples
+  type: openapi
+  lifecycle: production
+  owner: group:Engineering
+  system: rhdh
   definition: |
-    syntax = "proto3";
-
-    service Exampler {
-      rpc Example (ExampleMessage) returns (ExampleMessage) {};
-    }
-
-    message ExampleMessage {
-      string example = 1;
-    };
+    openapi: 3.0.2
+    info:
+      title: Notifications Plugin REST API
+      version: 1.0.0
+      description: This is the documentation of the Notifications plugin API based on
+        the OpenAPI 3.0 specification.
+    servers:
+      - url: http://localhost:3000/api
+        description: ''
+    paths:
+      "/notifications/":
+        summary: Get notifications
+        get:
+          tags:
+            - Notification Management
+          responses:
+            '200':
+              "$ref": "#/components/responses/Notifications"
+          summary: Retrieve a list of notifications
+        post:
+          requestBody: {}
+          tags:
+            - Notification Management
+          responses:
+            '200':
+              "$ref": "#/components/responses/Notifications"
+          summary: Create a new notification
+        parameters:
+          - name: offset
+            description: Default value is 10
+            schema:
+              type: integer
+            in: query
+          - name: limit
+            description: Default value is 10
+            schema:
+              type: integer
+            in: query
+          - name: orderField
+            description: ''
+            schema: {}
+            in: query
+          - name: search
+            description: Search for notifications with a specific text
+            schema:
+              type: string
+            in: query
+          - name: read
+            description: Return read notifications only if true, otherwise all notifications
+            schema:
+              type: boolean
+            in: query
+          - name: topic
+            description: ''
+            schema:
+              type: string
+            in: query
+      "/notifications/status":
+        get:
+          tags:
+            - Notification Management
+          responses:
+            '200':
+              "$ref": "#/components/responses/NotificationStatus"
+      "/notifications/notifications/:id":
+        get:
+          tags:
+            - Notification Management
+          responses:
+            '200':
+              "$ref": "#/components/responses/Notification"
+            '404':
+              description: Returns 404 when no notifications are found
+          summary: Get a notification
+      "/notifications/update":
+        post:
+          requestBody:
+            content:
+              application/json: {}
+            required: true
+          tags:
+            - Notification Management
+          responses:
+            '200':
+              "$ref": "#/components/responses/Notifications"
+          summary: Update an existing notification
+      "/notifications/health":
+        get:
+          tags:
+            - Health Management
+          responses:
+            '200':
+              content:
+                application/json:
+                  schema:
+                    "$ref": "#/components/schemas/Health"
+              description: Return status ok
+    components:
+      schemas:
+        Notification:
+          description: ''
+          required:
+            - id
+            - created
+            - origin
+            - payload
+          type: object
+          properties:
+            id:
+              description: Unique identifier for the notification
+              type: string
+            user:
+              description: The user entity reference that the notification is targeted
+                to or null for broadcast notifications
+              type: string
+            created:
+              format: date
+              description: Notification creation date
+              type: string
+            saved:
+              format: date
+              description: If user has saved the notification, the date when it was saved
+              type: string
+            read:
+              format: date
+              description: If user has read the notification, the date when it was read
+              type: string
+            updated:
+              format: date
+              description: If the notification has been updated due to it being in the
+                same scope and from same origin as previous notification, the date when
+                it was updated
+              type: string
+            origin:
+              description: Origin of the notification as in the reference to sender
+              type: string
+            payload:
+              "$ref": "#/components/schemas/NotificationPayload"
+              description: Actual notification payload
+        NotificationPayload:
+          description: ''
+          required:
+            - title
+          type: object
+          properties:
+            title:
+              description: Notification title
+              type: string
+            description:
+              description: Optional longer description for the notification
+              type: string
+            link:
+              description: Optional link where the notification is pointing to
+              type: string
+            severity:
+              "$ref": "#/components/schemas/NotificationSeverity"
+              description: Notification severity, defaults to 'normal'
+            topic:
+              description: Optional notification topic
+              type: string
+            scope:
+              description: Notification scope, can be used to re-send same notifications
+                in case the scope and origin matches.
+              type: string
+            icon:
+              description: Optional notification icon
+              type: string
+        NotificationStatus:
+          description: ''
+          required:
+            - unread
+            - read
+          type: object
+          properties:
+            unread:
+              description: Total number of unread notifications for the user
+              type: integer
+            read:
+              description: Total number of read notifications for the user
+              type: integer
+        NotificationSeverity:
+          description: ''
+          enum:
+            - critical
+            - high
+            - normal
+            - low
+          type: string
+        Health:
+          description: ''
+          required:
+            - status
+          type: object
+          properties:
+            status:
+              description: ''
+              type: string
+              example: ''
+          example:
+            status: ok
+      responses:
+        Notifications:
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/Notification"
+          description: ''
+        Health:
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Health"
+          description: ''
+        NotificationStatus:
+          description: ''
+        Notification:
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Notification"
+          description: ''
+    tags:
+      - name: Notification Management
+        description: Notifications Management
+      - name: Health Management
+        description: Manage the health of the Notifications Plugin
